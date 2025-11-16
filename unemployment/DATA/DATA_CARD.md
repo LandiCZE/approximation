@@ -1,7 +1,6 @@
 # DATASET_CARD.md
 
-## Title
-**Unemployment and Voting Data for Okres-Level Approximation**
+## Unemployment and Voting Data for Okres-Level Approximation
 
 ## Purpose and Context
 This dataset supports the empirical analysis of unemployment disaggregation conducted in the thesis *“Approximation of measures to lower granularities.”*  
