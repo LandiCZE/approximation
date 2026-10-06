@@ -29,7 +29,7 @@ All datasets are merged via standardized territorial identifiers (`Kraj`, `Okres
 | `Kraj` | string | key | Regional name (NUTS3 level) | *nezamestnanost.csv* |
 | `Okres` | string | key | District name (LAU1 level) | *Formatted_Okres_Data.csv* |
 | `Podíl nezaměstnaných osob [%]` | float | **Target (y_target)** | Share of unemployed persons as percentage of total workforce | *Formatted_Okres_Data.csv*, *nezamestnanost.csv* |
-| `Počet uchazečů na 1 VPM` | float | **Predictor / auxiliary feature** | Number of job applicants per one available job position | *Formatted_Okres_Data.csv*, *nezamestnanost.csv* |
+| `Počet uchazečů na 1 VPM` | float | not used (at Okres level it is part of the ground truth) | Number of job applicants per one available job position | *Formatted_Okres_Data.csv*, *nezamestnanost.csv* |
 | `Volební strana` | string | auxiliary | Political party name | *combined_with_kraj_okres.xlsx* |
 | `Hlasy abs.` | string (int) | auxiliary | Absolute number of votes for a given party in the district | *combined_with_kraj_okres.xlsx* |
 | `Hlasy v %` | float | auxiliary | Share of total votes received by the party in the district | *combined_with_kraj_okres.xlsx* |
@@ -51,10 +51,19 @@ Each row represents one district–party combination used for generating correla
 ---
 
 ## Anchoring Logic
-The unemployment rate at the **Kraj level** acts as an *aggregation constraint* (`anchor_kraj_y`) during downscaling.  
-When approximating Okres-level values, predicted rates are normalized such that their **weighted average** within each Kraj equals the known regional total.  
-Voting data serve as auxiliary predictors, reflecting socioeconomic gradients across districts.  
-This ensures that the resulting Okres-level unemployment estimates are both spatially consistent and statistically aligned with official Kraj-level aggregates.
+The Kraj unemployment rate acts as an *aggregation anchor*. After each method predicts Okres values,
+the predictions within each Kraj are rescaled (ratio adjustment) so that their **weighted mean** equals
+the official Kraj value. The weight is the number of households per Okres (Census 2021, taken from
+`education/DATA/domacnosti.xlsx`) as a population proxy.
+
+Vote counts are **not** usable as weights or raw features: the voting file contains municipal
+elections, where each voter casts as many votes as there are council seats (Prague alone has ~36M
+votes). The ~390 local lists are therefore grouped into political blocs by keyword (ANO, SPD & allies,
+left, SPOLU parties, Pirates/STAN, independents, other) and used as **vote shares** per Okres.
+
+Known data issue handled in code: *Praha-východ* and *Praha-západ* appear in the voting file as
+`Hlavní město Prahavychod` / `Prahazapad` under Prague; they are mapped to Středočeský kraj.
+The implementation is in `approx/data.py` and `approx/methods.py`.
 
 ---
 
@@ -71,5 +80,5 @@ This ensures that the resulting Okres-level unemployment estimates are both spat
 The dataset is based on publicly available data released under open statistical use conditions by:
 
 > Czech Statistical Office (2021). *Unemployment Statistics by Region and District.*  
-> Czech Statistical Office (2021). *Czech Parliamentary Elections – Official Results.*  
+> Czech Statistical Office. *Municipal Elections – Official Results* (volby.cz).  
 > Data accessed through https://www.czso.cz and https://www.volby.cz.
